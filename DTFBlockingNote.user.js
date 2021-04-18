@@ -1,10 +1,14 @@
 // ==UserScript==
 // @name        DTF Blocking Note
+// @match       https://tjournal.ru/*
 // @match       https://dtf.ru/*
+// @match       https://vc.ru/*
 // @version     0.1  (2021-04-18)
 // @license     MIT
 // @author      KekW - https://dtf.ru/u/182912-kekw
 // @description Записная книга для мистеров лохов.
+// @icon        https://raw.githubusercontent.com/KekWCatra/DTFBlockingNote/main/icon.png
+// @icon64      https://raw.githubusercontent.com/KekWCatra/DTFBlockingNote/main/icon.png
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_addValueChangeListener
