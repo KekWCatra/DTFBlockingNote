@@ -1,12 +1,10 @@
 // ==UserScript==
 // @name        DTF Blocking Note
-// @match       https://tjournal.ru/*
 // @match       https://dtf.ru/*
-// @match       https://vc.ru/*
-// @version     0.1  (2021-04-18)
+// @version     1.0  (2022-01-27)
 // @license     MIT
-// @author      KekW - https://dtf.ru/u/182912-kekw
-// @description Записная книга для мистеров лохов.
+// @author      токсичная мразь - https://dtf.ru/u/182912-toksichnaya-mraz
+// @description Записная книга мистеров лохов.
 // @icon        https://raw.githubusercontent.com/KekWCatra/DTFBlockingNote/main/icon.png
 // @icon64      https://raw.githubusercontent.com/KekWCatra/DTFBlockingNote/main/icon.png
 // @grant       GM_getValue
@@ -73,39 +71,6 @@ let popupBlock = `
 </div>
 `;
 
-let allListBlocked = `
-<div class="popup" id="_kekw_popup_list_block">
-	<div class="popup__layout popup__layout--shown"></div>
-	<div class="popup__container popup__container--shown">
-		<div class="popup__container__window popup__container__window--styled" style="width: 1280px!important;">
-			<div class="popup__container__window__close _kekw_close_dtf_popup_list">
-				<svg class="icon icon--ui_close" width="12" height="12">
-					<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#ui_close"></use>
-				</svg>
-			</div>
-			<div class="popup__container__window__tpl" style="overflow: auto;">
-				<div class="popup__content popup__content--misprint">
-					<h4>Список заблокированных</h4>
-					<div>
-                        <fieldset id="listedBlockDTFKEKW">
-
-                        </fieldset>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-`;
-
-let zeroBlocked = `<button class="ui-button ui-button--4" style="cursor: default!important;">У вас нет заблокированных</button>`;
-
-let removeComm = `<div class="comments__item__self comments__item__self--major comments__item__self--ignored">
-    <div class="comments__item__text">
-        <p>Комментарий скрыт</p>
-    </div>
-</div>`;
-
 let blockListButton = `<div id="dataheadBlock"><div id="blockListId">⊘</div></div>`;
 
 function saveBlocking()
@@ -164,7 +129,7 @@ function addBlockingButton()
     let target = document.querySelector('.v-header--with-actions > .v-header__actions');
     let loc = window.location;
 
-    if (target && loc.toString().indexOf('/u/') >= 0 && !document.querySelector('._kekw_dtf_block_user')) {
+    if (target && loc.toString().indexOf('/u/') >= 0 && !document.querySelector('._kekw_dtf_block_user') && !document.querySelector('a[href*="/settings"][class*="v-button"]')) {
         userNameBlock = document.querySelector('div.v-header-title__main > a.v-header-title__name').innerText.toString();
         userIdBlock = target.querySelector('[data-subsite-id]').dataset.subsiteId;
 
@@ -176,10 +141,6 @@ function addBlockingButton()
         divButton.innerHTML = `<span class="v-button__label" style="font-size: 22px;margin-bottom: 3px;">⊘</span>`;
 
         target.insertAdjacentElement('afterbegin', divButton);
-    }
-
-    if (!userNameBlock && loc.toString().indexOf('/u/')) {
-        setTimeout(addBlockingButton, 500);
     }
 }
 
@@ -201,15 +162,15 @@ function muteNews(feedBlock)
 
 function muteComm(feedBlock)
 {
-    if (!feedBlock.classList.contains('comments__item__user')) {
+    if (!feedBlock.classList.contains('comment__author')) {
         return;
     }
 
-    let nameBlocked = feedBlock.querySelectorAll('p[class="comments__item__user__name"]')[0].innerText;
-    feedBlock.parentNode.parentNode.parentNode.parentNode.setAttribute('data-blacked', 'ЗАБЛОКИРОВАН — ' + nameBlocked.toUpperCase());
-    feedBlock.parentNode.parentNode.parentNode.parentNode.classList.add('_kekw_block_this_comment', '_kekw_notice_block_comm');
+    let nameBlocked = feedBlock.outerText;
+    feedBlock.parentNode.setAttribute('data-blacked', 'ЗАБЛОКИРОВАН — ' + nameBlocked.toUpperCase());
+    feedBlock.parentNode.classList.add('_kekw_block_this_comment', '_kekw_notice_block_comm');
 
-    feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.querySelectorAll('div[class*="comments__item__space"]')[0].addEventListener('click', function(e) {
+    feedBlock.parentNode.parentNode.addEventListener('click', function(e) {
         e.target.classList.remove('_kekw_block_this_comment', '_kekw_notice_block_comm');
         feedBlock.classList.remove('_kekw_has_block');
         feedBlock.classList.add('_kekw_unblock_this_comment');
@@ -231,19 +192,29 @@ function deleteNews(feedBlock)
 
 function deleteComm(feedBlock)
 {
-    if (!feedBlock.classList.contains('comments__item__user')) {
+    if (!feedBlock.classList.contains('comment__author')) {
         return;
     }
 
-    feedBlock.parentNode.parentNode.parentNode.innerHTML = removeComm;
+    let nameBlocked = feedBlock.outerText;
+    let removeComm = `<div class="comment__content">
+    <div class="comment__text">
+        <p>Комментарий пользователя <b style="font-weight: bold;"><i style="font-style:italic;">${nameBlocked}</i></b> скрыт</p>
+    </div>
+</div>`;
+
+    if (feedBlock.parentNode.parentNode)
+        feedBlock.parentNode.parentNode.innerHTML = removeComm;
 }
 
 function realizeBlock()
 {
-    Object.keys(_kekw_dtfBlockList).forEach(function(id) {
-        let [idBlock, reason, name] = _kekw_dtfBlockList[id].split('|$|');
-        document.querySelectorAll('a[href*="u/' + id + '-"][class*="content-header-author"]:not(._kekw_has_block), a[href*="u/' + id + '-"][class*="comments__item__user"]:not(._kekw_unblock_this_comment):not(._kekw_has_block)').forEach(function(feedBlock) {
-
+    document.querySelectorAll('a[href*=".ru/u/"][class*="content-header-author"]:not(._kekw_has_block), a[href*=".ru/u/"][class*="comment__author"]:not(._kekw_unblock_this_comment):not(._kekw_has_block)').forEach(function(feedBlock) {
+        let iHateDTF = feedBlock.href.split('/u/');
+        iHateDTF = iHateDTF[1].split('-');
+        iHateDTF = iHateDTF[0];
+        if (iHateDTF in _kekw_dtfBlockList) {
+            let [idBlock, reason, name] = _kekw_dtfBlockList[iHateDTF].split('|$|');
             if (idBlock == 1) {
                 muteNews(feedBlock);
                 muteComm(feedBlock);
@@ -262,81 +233,31 @@ function realizeBlock()
             } else if (idBlock == 6) {
                 deleteComm(feedBlock);
             }
-        });
+        }
     });
 }
 
-function removeBlockedById(id)
-{
-    delete _kekw_dtfBlockList[id];
-    document.getElementById('blockIdDTF-'+id).remove();
-    saveBlocking();
-}
-
-function addBlockListButton()
-{
-    if (!document.querySelectorAll('[class="site-header-user"]')[0]) {
-        setTimeout(addBlockListButton, 500);
-        return;
-    }
-
-    document.querySelectorAll('[class="site-header-user"]')[0].insertAdjacentHTML('afterEnd', blockListButton);
-    document.getElementById('blockListId').addEventListener('click', function(e) {
-        body.insertAdjacentHTML('beforeend', allListBlocked);
-        let colorText = '#000';
-        if (body.classList.contains('s42-is-dark')) {
-            colorText = '#fff';
-        }
-        if (Object.keys(_kekw_dtfBlockList).length === 0) {
-            document.getElementById('listedBlockDTFKEKW').innerHTML = zeroBlocked;
-        } else {
-            let listDesgn = "<ol style=\"list-style: decimal;padding: 0px 17px;max-height: 620px;\">";
-            Object.keys(_kekw_dtfBlockList).forEach(function(id) {
-                let [idBlock, reason, name] = _kekw_dtfBlockList[id].split('|$|');
-                reason = reason ? ' [ Причина: ' + reason + ' ]' : '';
-                listDesgn += "<li id=\"blockIdDTF-"+id+"\" style=\"margin-bottom: 10px;color: "+colorText+"!important;\">" + name + reason + " <span class=\"removeBlockedById\" style=\"cursor:pointer;text-decoration: underline;color: #d91e18;\" data-blockedid=\""+id+"\">[ Разблокировать ]</span></li>";
-            });
-            listDesgn += "</ol>";
-            document.getElementById('listedBlockDTFKEKW').innerHTML = listDesgn;
-            document.querySelectorAll('[class=removeBlockedById]').forEach(function(unblock) {
-                unblock.addEventListener('click', function (event) {
-                    removeBlockedById(unblock.dataset.blockedid);
-                    return false;
-                });
-            });
-        }
-
-        document.querySelectorAll('[class*=_kekw_close_dtf_popup_list]')[0].addEventListener('click', function (event) {
-            document.getElementById('_kekw_popup_list_block').remove();
-        });
-
-    });
-}
-
-function init(run)
+function init()
 {
     try {
         _kekw_dtfBlockList = JSON.parse(GM_getValue('_dtf_blocking_user', '{}') || '{}');
     } catch (e) {
         _kekw_dtfBlockList = {};
     }
-
-    if (!run) {
-        addBlockListButton();
-        addBlockingButton();
-    }
 }
 
 
 addEventListener('DOMContentLoaded', function() {
     realizeBlock();
+    addBlockingButton();
 });
 
 addEventListener('DOMNodeInserted', function() {
     realizeBlock();
+    addBlockingButton();
 });
 
-init(false);
+init();
 GM_addValueChangeListener('_dtf_blocking_user', function(changes, namespace) {
-    init(true);
+    init();
 });
