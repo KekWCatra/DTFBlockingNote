@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name        DTF Blocking Note
 // @match       https://dtf.ru/*
-// @version     1.0  (2022-01-27)
+// @version     1.1  (2022-12-22)
 // @license     MIT
-// @author      токсичная мразь - https://dtf.ru/u/182912-toksichnaya-mraz
+// @author      KekW aka Токсичная Мразь aka Милый Мальчик - https://dtf.ru/u/182912-milyy-malchik
+// @gratitude 	πρόσταγμα - https://dtf.ru/u/74342-prostagma
 // @description Записная книга мистеров лохов.
 // @icon        https://raw.githubusercontent.com/KekWCatra/DTFBlockingNote/main/icon.png
 // @icon64      https://raw.githubusercontent.com/KekWCatra/DTFBlockingNote/main/icon.png
@@ -146,18 +147,37 @@ function addBlockingButton()
 
 function muteNews(feedBlock)
 {
-    if (!feedBlock.classList.contains('content-header-author')) {
+    if (!feedBlock.classList.contains('content-header-author__name')) {
         return;
     }
 
-    if (document.querySelectorAll('div[class*="l-entry__header"]').length > 0) {
+    if (document.getElementsByClassName('l-entry').length > 0) {
         return;
     }
 
-    let nameBlocked = feedBlock.parentNode.parentNode.parentNode.parentNode.querySelectorAll('a[href*="/u/"] > div[class="content-header-author__name"]')[0].innerHTML.toString().trim();
-    feedBlock.parentNode.parentNode.parentNode.parentNode.setAttribute('data-blacked', 'ЗАБЛОКИРОВАН — ' + nameBlocked.toUpperCase());
-    feedBlock.parentNode.parentNode.parentNode.classList.add('_kekw_blocked_this_post');
-    feedBlock.parentNode.parentNode.parentNode.parentNode.classList.add('_kekw_notice_block');
+    if (feedBlock.tagName == 'A') {
+        let nameBlocked = feedBlock.innerHTML.toString().trim();
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.setAttribute('data-blacked', 'ЗАБЛОКИРОВАН — ' + nameBlocked.toUpperCase());
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.classList.add('_kekw_blocked_this_post');
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.classList.add('_kekw_notice_block');
+
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.addEventListener('click', function(e) {
+            e.target.classList.remove('_kekw_notice_block', '_kekw_blocked_this_post');
+            feedBlock.classList.remove('_kekw_has_block');
+            feedBlock.classList.add('_kekw_unblock_this_post');
+        });
+    } else {
+        let nameBlocked = feedBlock.parentNode.parentNode.parentNode.parentNode.querySelectorAll('a[href*="/u/"] > div[class="content-header-author__name"]')[0].innerHTML.toString().trim();
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.setAttribute('data-blacked', 'ЗАБЛОКИРОВАН — ' + nameBlocked.toUpperCase());
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.classList.add('_kekw_blocked_this_post');
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.classList.add('_kekw_notice_block');
+
+        feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.addEventListener('click', function(e) {
+            e.target.classList.remove('_kekw_notice_block', '_kekw_blocked_this_post');
+            feedBlock.classList.remove('_kekw_has_block');
+            feedBlock.classList.add('_kekw_unblock_this_post');
+        });
+    }
 }
 
 function muteComm(feedBlock)
@@ -179,7 +199,7 @@ function muteComm(feedBlock)
 
 function deleteNews(feedBlock)
 {
-    if (!feedBlock.classList.contains('content-header-author')) {
+    if (!feedBlock.classList.contains('content-header-author__name')) {
         return;
     }
 
@@ -187,7 +207,7 @@ function deleteNews(feedBlock)
         return;
     }
 
-    feedBlock.parentNode.parentNode.parentNode.parentNode.remove();
+    feedBlock.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.remove();
 }
 
 function deleteComm(feedBlock)
@@ -209,12 +229,19 @@ function deleteComm(feedBlock)
 
 function realizeBlock()
 {
-    document.querySelectorAll('a[href*=".ru/u/"][class*="content-header-author"]:not(._kekw_has_block), a[href*=".ru/u/"][class*="comment__author"]:not(._kekw_unblock_this_comment):not(._kekw_has_block)').forEach(function(feedBlock) {
-        let iHateDTF = feedBlock.href.split('/u/');
+    document.querySelectorAll('a[href*=".ru/u/"] > div[class="content-header-author__name"]:not(._kekw_has_block), a[href*=".ru/u/"][class="content-header-author__name"]:not(._kekw_has_block), a[href*=".ru/u/"][class*="comment__author"]:not(._kekw_unblock_this_comment):not(._kekw_has_block)').forEach(function(feedBlock) {
+        let iHateDTF = '';
+        if (feedBlock.classList.contains('content-header-author__name') && feedBlock.tagName !== 'A') {
+            iHateDTF = feedBlock.parentElement.href.split('/u/');
+        } else {
+            iHateDTF = feedBlock.href.split('/u/');
+        }
+
         iHateDTF = iHateDTF[1].split('-');
         iHateDTF = iHateDTF[0];
         if (iHateDTF in _kekw_dtfBlockList) {
             let [idBlock, reason, name] = _kekw_dtfBlockList[iHateDTF].split('|$|');
+
             if (idBlock == 1) {
                 muteNews(feedBlock);
                 muteComm(feedBlock);
